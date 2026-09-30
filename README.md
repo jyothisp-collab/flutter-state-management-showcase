@@ -1,34 +1,98 @@
 # Flutter State Management Showcase
 
-This repository demonstrates three popular Flutter state management approaches: **BLoC**, **Cubit**, and **Riverpod**.
+A focused Flutter reference implementation comparing three popular state management approaches side-by-side: **BLoC**, **Cubit**, and **Riverpod**. Built for client review to demonstrate how the same data flow is expressed across different patterns.
 
-By implementing the same basic task-management (To-Do) functionality across all three approaches, this repository provides a practical comparison of their concepts, syntax, and behaviors.
+## What It Demonstrates
 
-## Approaches Demonstrated
+- **BLoC** — Event-driven state management with `BlocConsumer`, `listenWhen`/`buildWhen`, and explicit event/state transformations.
+- **Cubit** — Simplified BLoC with direct method calls instead of events, reducing boilerplate for straightforward state changes.
+- **Riverpod** — Compile-safe reactivity with `AsyncNotifierProvider`, `WidgetRef`, and provider composition.
+- **Shared Clean Architecture data layer** — All three examples operate on the same domain/data layer, demonstrating how state management is a presentation concern independent of business logic.
+- **Clean Architecture** — Strict layer separation with domain owning entities and repository contracts, data providing implementations, and presentation consuming both.
+- **Material 3** — Consistent theming across all three examples with a tabbed `IndexedStack` navigation.
 
-*   **Cubit**: A lightweight state management solution from the `bloc` package. It manages state by exposing functions that can be called directly to emit new states. It's simpler than BLoC and great for most use cases.
-*   **BLoC (Business Logic Component)**: A more strict, event-driven pattern where the UI sends *Events* to the BLoC, which then transforms them into *States*. It requires more boilerplate than Cubit but offers robust traceability and advanced event transformations (like debouncing).
-*   **Riverpod**: A modern, compile-safe reactivity framework. Instead of widgets depending on a tree hierarchy, Riverpod uses global providers that are read safely via a `WidgetRef` or `ProviderContainer`. It excels at composing asynchronous data sources.
+## Architecture Overview
 
-## Getting Started
+```
+lib/
+├── main.dart                              — Composition root, tab navigation
+├── core/
+│   └── error/
+│       ├── app_error.dart                  — AppError type
+│       └── result.dart                     — Result<T> (Success / Failure)
+└── features/
+    └── example_feature/
+        ├── data/
+        │   ├── datasources/
+        │   │   └── task_local_data_source.dart
+        │   ├── models/
+        │   │   └── task_model.dart
+        │   └── repositories/
+        │       └── task_repository_impl.dart
+        ├── domain/
+        │   ├── entities/
+        │   │   └── task.dart
+        │   ├── repositories/
+        │   │   └── task_repository.dart
+        │   └── usecases/
+        │       ├── get_tasks.dart
+        │       └── toggle_task.dart
+        └── presentation/
+            ├── views/
+            │   └── task_list_view.dart
+            ├── viewmodels/
+            │   └── task_viewmodel.dart
+            └── widgets/
+                ├── task_item.dart
+                └── status_widget.dart
+```
 
-1.  Clone this repository.
-2.  Run `flutter pub get` to install dependencies.
-3.  Run `flutter run` to launch the application.
+### Data Flow (same across all three)
+
+```
+View → ViewModel/Bloc/Cubit/Notifier → UseCase → Repository (domain) → RepositoryImpl (data) → DataSource
+```
+
+The domain layer has zero Flutter dependencies. Each state management approach wraps the same use cases and reacts to the same `Result<T>` types.
+
+## State Management Comparison
+
+| Concern | BLoC | Cubit | Riverpod |
+|---|---|---|---|
+| State emission | `emit(state)` via events | `emit(state)` via direct calls | `state = value` in AsyncNotifier |
+| Boilerplate | Event classes + state classes | State classes only | Provider definition only |
+| Testability | Test events → state transitions | Test method calls → state | Test provider methods |
+| Rebuild control | `buildWhen` / `listenWhen` | `listenWhen` equivalent via provider | `select` for granular rebuilds |
+
+## Design Decisions
+
+- **ChangeNotifier** is used for the Architecture Showcase to keep the ViewModel comparison focused on architecture rather than state-management mechanics. The same data layer powers all three examples here.
+- **Equatable** on entities provides value-based equality for state comparison without manual `==` overrides.
+- **Sealed `Result<T>`** makes error handling explicit — every repository method returns `Success<T>` or `Failure`, so the UI never catches unexpected exceptions.
+- **No DI framework** — Dependencies are composed in `main.dart` and passed through constructors. The graph is visible in one place and requires no code generation.
+- **In-memory data source** — `TaskLocalDataSource` uses an in-memory list with artificial delay to simulate async operations without network dependencies.
 
 ## Testing
 
-This repository includes focused tests covering the core behavior (initial states, async loading, error handling, and state toggling) of each state management implementation.
+Tests are organized by layer:
 
-To run the tests:
+- **Use case tests** — Verify `GetTasks` delegates to the repository and maps `Result` correctly.
+- **Data source tests** — Verify in-memory CRUD with simulated latency.
+- **ViewModel tests** — Verify state transitions (loading → loaded, loading → error) and toggle behavior.
+
+Run:
+
 ```bash
+flutter pub get
 flutter test
+flutter analyze
 ```
 
-## Out of Scope
+## Out Of Scope
 
-This is a technical showcase focused strictly on comparing state management tools. The following are intentionally omitted to keep the comparison clear:
-*   Persistent storage (uses in-memory mock data)
-*   Networking / API calls
-*   Complex UI / Animations
-*   Authentication
+- Persistent storage (in-memory only).
+- Networking or API calls.
+- Authentication flows.
+- Complex UI, animations, or navigation.
+- Dependency injection frameworks.
+- Comparison with other state management libraries (Provider, GetX, MobX).

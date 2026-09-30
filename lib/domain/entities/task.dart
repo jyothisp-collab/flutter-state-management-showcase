@@ -1,15 +1,12 @@
 import 'package:equatable/equatable.dart';
 
+@immutable
 class Task extends Equatable {
   final String id;
   final String title;
   final bool isCompleted;
 
-  const Task({
-    required this.id,
-    required this.title,
-    required this.isCompleted,
-  });
+  const Task({required this.id, required this.title, required this.isCompleted});
 
   Task copyWith({String? id, String? title, bool? isCompleted}) {
     return Task(

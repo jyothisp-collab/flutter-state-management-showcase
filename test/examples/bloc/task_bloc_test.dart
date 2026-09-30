@@ -41,7 +41,6 @@ void main() {
       addTearDown(bloc.close);
 
       bloc.add(const LoadTasks());
-
       await bloc.stream.skip(1).firstWhere(
             (s) => s is TaskLoaded || s is TaskError,
             orElse: () => throw StateError('No terminal state'),
@@ -58,7 +57,6 @@ void main() {
       addTearDown(bloc.close);
 
       bloc.add(const LoadTasks());
-
       await bloc.stream.skip(1).firstWhere(
             (s) => s is TaskLoaded || s is TaskError,
             orElse: () => throw StateError('No terminal state'),
@@ -83,7 +81,7 @@ void main() {
       await bloc.stream.firstWhere(
         (s) => s is TaskLoaded || s is TaskError,
         orElse: () => throw StateError('No terminal state'),
-      );
+          );
 
       final loaded = bloc.state as TaskLoaded;
       expect(loaded.tasks[0].isCompleted, isTrue);
